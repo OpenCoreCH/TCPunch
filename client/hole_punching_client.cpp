@@ -3,12 +3,10 @@
 using boost::asio::ip::udp;
 using boost::asio::ip::address;
 
-udp::endpoint pair(std::string pairing_name, std::string server_address) {
+udp::endpoint pair(udp::socket& socket, std::string pairing_name, std::string server_address) {
 	const std::size_t buffer_length = sizeof(in_addr) + sizeof(in_port_t);
 	char buffer[buffer_length];
 
-	boost::asio::io_service io_service;
-    udp::socket socket(io_service);
     udp::endpoint punching_server = udp::endpoint(address::from_string(server_address), SERVER_PORT);
     socket.open(udp::v4());
 

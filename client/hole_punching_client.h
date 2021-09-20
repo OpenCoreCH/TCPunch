@@ -7,6 +7,6 @@
 #define SERVER_PORT 10000
 #define MAX_BUFFER_DATA_SIZE 65527
 
-boost::asio::ip::udp::endpoint pair(std::string pairing_name, std::string server_address);
+boost::asio::ip::udp::endpoint pair(boost::asio::ip::udp::socket& socket, std::string pairing_name, std::string server_address);
 
 #endif
