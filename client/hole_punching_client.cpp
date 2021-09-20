@@ -1,4 +1,3 @@
-// Client side implementation of UDP client-server model
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,8 +9,7 @@
 #include <string>
 #include <iostream>
 
-#define PORT	 10000
-#define MAXLINE 1024
+#define SERVER_PORT 10000
 
 #if __APPLE__
     #define MSG_CONFIRM 0
@@ -22,7 +20,8 @@ int main() {
     int buffer_length = sizeof(in_addr) + sizeof(in_port_t);
 	char buffer[buffer_length];
 	std::string pairingName("Test");
-	struct sockaddr_in	 servaddr;
+	std::string serverAddress("192.168.0.198");
+	struct sockaddr_in servaddr;
 
 	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
 		perror("socket creation failed");
@@ -32,8 +31,8 @@ int main() {
 	memset(&servaddr, 0, sizeof(servaddr));
 	
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(PORT);
-	servaddr.sin_addr.s_addr = INADDR_ANY;
+	servaddr.sin_port = htons(SERVER_PORT);
+	inet_pton(AF_INET, serverAddress.c_str(), &(servaddr.sin_addr.s_addr));
 	
 	int n, len;
 
@@ -45,6 +44,16 @@ int main() {
     in_port_t* peer_port = (in_port_t*) (buffer + sizeof(in_addr));
 	printf("Peer IP : %s\n", inet_ntoa(*peer_address));
     printf("Peer Port: %hu\n", *peer_port);
+
+	struct sockaddr_in peeraddr;
+	peeraddr.sin_family = AF_INET;
+	peeraddr.sin_port = *peer_port;
+	peeraddr.sin_addr = *peer_address;
+	char recv_buffer[128];
+	sendto(sockfd, "Ping", 4, MSG_CONFIRM, (const struct sockaddr *) &peeraddr, sizeof(peeraddr));
+	n = recvfrom(sockfd, recv_buffer, 128, MSG_WAITALL, (struct sockaddr *) &peeraddr, (socklen_t *) &len);
+	recv_buffer[n] = '\0';
+	printf("%s", recv_buffer);
 
 	close(sockfd);
 	return 0;
