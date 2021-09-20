@@ -27,9 +27,9 @@ int pair(struct sockaddr_in &peeraddr, std::string pairing_name, std::string ser
 	
 	peeraddr.sin_family = AF_INET;
 	peeraddr.sin_addr = *((in_addr*) buffer);
-    peeraddr.sin_port = *((in_port_t*) (buffer + sizeof(in_addr)));
+	peeraddr.sin_port = *((in_port_t*) (buffer + sizeof(in_addr)));
 	printf("Peer IP : %s\n", inet_ntoa(peeraddr.sin_addr));
-    printf("Peer Port: %hu\n", peeraddr.sin_port);
+	printf("Peer Port: %hu\n", peeraddr.sin_port);
 
 	return sockfd;
 }
