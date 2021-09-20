@@ -1,27 +1,35 @@
 #include "./hole_punching_client.h"
 
-using boost::asio::ip::udp;
-using boost::asio::ip::address;
-
-udp::endpoint pair(udp::socket& socket, std::string pairing_name, std::string server_address) {
+int pair(struct sockaddr_in &peeraddr, std::string pairing_name, std::string server_address) {
+	int sockfd;
+	struct sockaddr_in servaddr;
+	
 	const std::size_t buffer_length = sizeof(in_addr) + sizeof(in_port_t);
 	char buffer[buffer_length];
 
-    udp::endpoint punching_server = udp::endpoint(address::from_string(server_address), SERVER_PORT);
-    socket.open(udp::v4());
+    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+		perror("socket creation failed");
+		exit(EXIT_FAILURE);
+	}
 
-    boost::system::error_code err;
-    auto sent = socket.send_to(boost::asio::buffer(pairing_name), punching_server, 0, err);
+	memset(&servaddr, 0, sizeof(servaddr));
+	
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(SERVER_PORT);
+	inet_pton(AF_INET, server_address.c_str(), &(servaddr.sin_addr.s_addr));
+	
+	int n, len;
 
-	int n = socket.receive_from(boost::asio::buffer(buffer), punching_server);
-	in_addr* peer_address = (in_addr*) buffer;
-	std::string peer_ip(inet_ntoa(*peer_address));
-    in_port_t* peer_port = (in_port_t*) (buffer + sizeof(in_addr));
-	unsigned short peer_port_h = ntohs(*peer_port);  // Need to convert port from network byte order to host byte order
-	std::cout << "Peer IP: " << peer_ip << std::endl;
-    std::cout << "Peer Port: " << *peer_port << std::endl;
+	
+	sendto(sockfd, pairing_name.c_str(), pairing_name.length(), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
 
+	n = recvfrom(sockfd, (char *)buffer, buffer_length, MSG_WAITALL, (struct sockaddr *) &servaddr, (socklen_t *) &len);
+	
+	peeraddr.sin_family = AF_INET;
+	peeraddr.sin_addr = *((in_addr*) buffer);
+    peeraddr.sin_port = *((in_port_t*) (buffer + sizeof(in_addr)));
+	printf("Peer IP : %s\n", inet_ntoa(peeraddr.sin_addr));
+    printf("Peer Port: %hu\n", peeraddr.sin_port);
 
-	udp::endpoint peer = udp::endpoint(address::from_string(peer_ip), peer_port_h);
-	return peer;
+	return sockfd;
 }
