@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <string>
+#include <iostream>
 
 #define PORT	 10000
 #define MAXLINE 1024
@@ -15,11 +17,11 @@
     #define MSG_CONFIRM 0
 #endif
 
-// Driver code
 int main() {
 	int sockfd;
-	char buffer[MAXLINE];
-	char *hello = "Hello from client";
+    int buffer_length = sizeof(in_addr) + sizeof(in_port_t);
+	char buffer[buffer_length];
+	std::string pairingName("Test");
 	struct sockaddr_in	 servaddr;
 
 	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
@@ -36,12 +38,13 @@ int main() {
 	int n, len;
 
 	
-	sendto(sockfd, (const char *)hello, strlen(hello), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
-	printf("Hello message sent.\n");
+	sendto(sockfd, pairingName.c_str(), pairingName.length(), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
 
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &servaddr, (socklen_t *) &len);
-	buffer[n] = '\0';
-	printf("Server : %s\n", buffer);
+	n = recvfrom(sockfd, (char *)buffer, buffer_length, MSG_WAITALL, (struct sockaddr *) &servaddr, (socklen_t *) &len);
+    in_addr* peer_address = (in_addr*) buffer;
+    in_port_t* peer_port = (in_port_t*) (buffer + sizeof(in_addr));
+	printf("Peer IP : %s\n", inet_ntoa(*peer_address));
+    printf("Peer Port: %hu\n", *peer_port);
 
 	close(sockfd);
 	return 0;

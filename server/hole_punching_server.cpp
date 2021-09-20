@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <map>
+#include <string>
+#include <cstring>
   
 #define PORT     10000
 #define MAXLINE 1024
@@ -40,13 +43,36 @@ int main() {
       
     int len, n;
   
-    len = sizeof(cliaddr);  //len is value/result
-  
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, (socklen_t*) &len);
-    buffer[n] = '\0';
-    printf("Client : %s\n", buffer);
-    sendto(sockfd, (const char *)hello, strlen(hello), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-    printf("Hello message sent.\n"); 
+    len = sizeof(cliaddr);
+
+    // Maps pairing names to sockaddrs (IP & port)
+    std::map<std::string, sockaddr_in> client_connections;
+
+    while (true) {
+        n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, (socklen_t*) &len);
+        buffer[n] = '\0';
+        printf("Got pairing request with name : %s\n", buffer);
+        std::string pairing_name(buffer);
+        auto existing_entry = client_connections.find(pairing_name);
+        if (existing_entry != client_connections.end()) {
+            int buffer_length = sizeof(in_addr) + sizeof(in_port_t);
+            char send_buffer_b[buffer_length];
+            std::memcpy(send_buffer_b, &(existing_entry->second.sin_addr), sizeof(in_addr));
+            std::memcpy(send_buffer_b + sizeof(in_addr), &(existing_entry->second.sin_port), sizeof(in_port_t));
+            sendto(sockfd, send_buffer_b, buffer_length, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+
+            char send_buffer_a[buffer_length];
+            std::memcpy(send_buffer_a, &(cliaddr.sin_addr), sizeof(in_addr));
+            std::memcpy(send_buffer_a + sizeof(in_addr), &(cliaddr.sin_port), sizeof(in_port_t));
+            sendto(sockfd, send_buffer_a, buffer_length, MSG_CONFIRM, (const struct sockaddr *) &(existing_entry->second), len);
+
+            printf("Replied with address.\n");
+            client_connections.erase(pairing_name);
+        } else {
+            client_connections[pairing_name] = cliaddr;    
+        }
+        
+    }
       
     return 0;
 }
