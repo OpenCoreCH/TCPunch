@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <cstring>
+#include <iostream>
   
 #define PORT     10000
 #define MAXPAIRINGNAME 100

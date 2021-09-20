@@ -3,5 +3,13 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"files.associations": {
+			"__locale": "cpp",
+			"ios": "cpp",
+			"iostream": "cpp",
+			"ostream": "cpp"
+		}
+	}
 }
