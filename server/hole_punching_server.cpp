@@ -22,8 +22,20 @@ static const size_t MAX_PAIRING_NAME = 100;
 std::map<std::string, ConnectionData> clients;
 
 int main(int argc, char** argv) {
+    int listen_port = DEFAULT_LISTEN_PORT;
+    if (argc == 2) {
+        char *p;
+        long input = strtol(argv[1], &p, 10);
+        if (errno != 0 || *p != '\0' || input > 65535 || input < 1) {
+            std::string usage_string("Usage: ");
+            usage_string += argv[0];
+            usage_string += " <port>";
+            error_exit(usage_string);
+        } else {
+            listen_port = (int) input;
+        }
+    }
 	int server_socket;
-	int listen_port = DEFAULT_LISTEN_PORT;
 	struct sockaddr_in server_data{};
     server_socket = socket(AF_INET, SOCK_STREAM , 0);
 
@@ -44,7 +56,9 @@ int main(int argc, char** argv) {
 		error_exit_errno("Error on bind: ");
 	}
 
-	listen(server_socket, 255);
+	if (listen(server_socket, 255) == -1) {
+        error_exit_errno("Listening failed: ");
+	}
 	std::cout << "Listening for connections on port: " << listen_port << std::endl;
 
 	while(true) {
