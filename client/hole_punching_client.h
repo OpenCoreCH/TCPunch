@@ -6,13 +6,10 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-#if __APPLE__
-    #define MSG_CONFIRM 0
-#endif
+#define DEBUG 1
+static const int MAX_RECV_BUFFER = 2048;
 
 
-#define SERVER_PORT 10000
-
-int pair(struct sockaddr_in &peeraddr, std::string pairing_name, std::string server_address);
+int pair(const std::string& pairing_name, const std::string& server_address, int port = 10000);
 
 #endif
