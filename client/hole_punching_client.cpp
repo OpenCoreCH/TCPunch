@@ -18,7 +18,7 @@
 #include "../common/utils.h"
 
 
-bool connection_established = false;
+std::atomic<bool> connection_established(false);
 
 void* peer_listen(void* p) {
     auto* info = (PeerConnectionData*)p;
@@ -149,7 +149,7 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
     peer_addr.sin_addr.s_addr = peer_data.ip.s_addr;
     peer_addr.sin_port = peer_data.port;
 
-    while(!connection_established) {
+    while(!connection_established.load()) {
         int peer_status = connect(peer_socket, (struct sockaddr *)&peer_addr, sizeof(struct sockaddr));
         if (peer_status != 0) {
             if (errno == EALREADY || errno == EAGAIN || errno == EINPROGRESS) {
@@ -167,7 +167,7 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
         }
     }
 
-    if(connection_established) {
+    if(connection_established.load()) {
         pthread_join(peer_listen_thread, nullptr);
     }
 
