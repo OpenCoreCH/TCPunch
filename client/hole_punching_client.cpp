@@ -15,6 +15,7 @@
 #include <thread>
 #include <stdexcept>
 #include <iostream>
+#include <atomic>
 #include "../common/utils.h"
 
 
