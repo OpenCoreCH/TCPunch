@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Threads REQUIRED)
-add_library(tcpunch SHARED hole_punching_client.cpp)
+add_library(tcpunch SHARED tcpunch.cpp)
 target_link_libraries(tcpunch PRIVATE Threads::Threads)
 
 #add_executable(tester tester.cpp)
