@@ -94,17 +94,13 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
         error_exit_errno("Failed to send data to rendezvous server: ");
     }
 
-    char rendezvous_recv_buffer[MAX_RECV_BUFFER];
-    ssize_t bytes = recv(socket_rendezvous, rendezvous_recv_buffer, MAX_RECV_BUFFER, 0);
+    PeerConnectionData public_info;
+    ssize_t bytes = recv(socket_rendezvous, &public_info, sizeof(public_info), MSG_WAITALL);
     if (bytes == -1) {
         error_exit_errno("Failed to get data from rendezvous server: ");
     } else if(bytes == 0) {
         error_exit("Server has disconnected");
     }
-
-    // Received data
-    PeerConnectionData public_info;
-    memcpy(&public_info, rendezvous_recv_buffer, sizeof(PeerConnectionData));
 
     pthread_t peer_listen_thread;
     int thread_return = pthread_create(&peer_listen_thread, nullptr, peer_listen, (void*) &public_info);
@@ -115,7 +111,7 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
     PeerConnectionData peer_data;
 
     // Wait until rendezvous server sends info about peer
-    ssize_t bytes_received = recv(socket_rendezvous, &peer_data, sizeof(peer_data), 0);
+    ssize_t bytes_received = recv(socket_rendezvous, &peer_data, sizeof(peer_data), MSG_WAITALL);
     if(bytes_received == -1) {
         error_exit_errno("Failed to get peer data from rendezvous server: ");
     } else if(bytes_received == 0) {
