@@ -6,7 +6,7 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-#define DEBUG 1
+#define DEBUG 0
 static const int MAX_RECV_BUFFER = 2048;
 
 

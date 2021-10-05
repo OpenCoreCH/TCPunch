@@ -1,10 +1,8 @@
 #include "tcpunch.h"
 #include <fcntl.h>
-#include <cstdio>
 #include <csignal>
 #include <cstring>
 #include <cstdlib>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -30,8 +28,9 @@ void* peer_listen(void* p) {
         error_exit_errno("Socket creation failed: ");
     }
     int enable_flag = 1;
-    if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR|SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
-        error_exit_errno("Setting REUSEADDR failed: ");
+    if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &enable_flag, sizeof(int)) < 0 ||
+        setsockopt(listen_socket, SOL_SOCKET, SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
+        error_exit_errno("Setting REUSE options failed: ");
     }
 
     struct sockaddr_in local_port_data{};
@@ -57,7 +56,9 @@ void* peer_listen(void* p) {
             std::cout << "Error when connecting to peer" << strerror(errno) << std::endl;
 #endif
         } else {
+#if DEBUG
             std::cout << "Succesfully connected to peer" << std::endl;
+#endif
             connection_established = true;
             return 0;
         }
@@ -78,8 +79,9 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
 
     // Enable binding multiple sockets to the same local endpoint, see https://bford.info/pub/net/p2pnat/ for details
     int enable_flag = 1;
-    if (setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEADDR|SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
-        error_exit_errno("Setting REUSEADDR failed: ");
+    if (setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEADDR, &enable_flag, sizeof(int)) < 0 ||
+        setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
+        error_exit_errno("Setting REUSE options failed: ");
     }
 
     server_data.sin_family = AF_INET;
@@ -117,14 +119,16 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
     } else if(bytes_received == 0) {
         error_exit("Server has disconnected when waiting for peer data");
     }
-
+#if DEBUG
     std::cout << "Peer: " << ip_to_string(&peer_data.ip.s_addr) << ":" << ntohs(peer_data.port) << std::endl;
+#endif
 
     //We do NOT close the socket_rendezvous socket here, otherwise the next binds sometimes fail (although SO_REUSEADDR|SO_REUSEPORT is set)!
 
     int peer_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (setsockopt(peer_socket, SOL_SOCKET, SO_REUSEADDR|SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
-        error_exit("Setting REUSEADDR failed");
+    if (setsockopt(peer_socket, SOL_SOCKET, SO_REUSEADDR, &enable_flag, sizeof(int)) < 0 ||
+        setsockopt(peer_socket, SOL_SOCKET, SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
+        error_exit("Setting REUSE options failed");
     }
 
     //Set socket to non blocking for the following polling operations
@@ -152,7 +156,9 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
             if (errno == EALREADY || errno == EAGAIN || errno == EINPROGRESS) {
                 continue;
             } else if(errno == EISCONN) {
+                #if DEBUG
                 std::cout << "Succesfully connected to peer" << std::endl;
+                #endif
                 break;
             } else {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
