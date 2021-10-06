@@ -18,6 +18,7 @@
 
 
 std::atomic<bool> connection_established(false);
+std::atomic<int> accepting_socket(-1);
 
 void* peer_listen(void* p) {
     auto* info = (PeerConnectionData*)p;
@@ -57,12 +58,12 @@ void* peer_listen(void* p) {
 #endif
         } else {
 #if DEBUG
-            std::cout << "Succesfully connected to peer" << std::endl;
+            std::cout << "Succesfully connected to peer, accepting" << std::endl;
 #endif
+            accepting_socket = peer;
             connection_established = true;
             return 0;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -157,7 +158,7 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
                 continue;
             } else if(errno == EISCONN) {
                 #if DEBUG
-                std::cout << "Succesfully connected to peer" << std::endl;
+                std::cout << "Succesfully connected to peer, EISCONN" << std::endl;
                 #endif
                 break;
             } else {
@@ -165,13 +166,14 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
                 continue;
             }
         } else {
-            std::cout << "Succesfully connected to peer" << std::endl;
+            std::cout << "Succesfully connected to peer, peer_status" << std::endl;
             break;
         }
     }
 
     if(connection_established.load()) {
         pthread_join(peer_listen_thread, nullptr);
+        peer_socket = accepting_socket.load();
     }
 
     int flags = fcntl(peer_socket,  F_GETFL, 0);
