@@ -68,7 +68,8 @@ void* peer_listen(void* p) {
 }
 
 int pair(const std::string& pairing_name, const std::string& server_address, int port) {
-
+    connection_established = false;
+    accepting_socket = -1;
 
     int socket_rendezvous;
     struct sockaddr_in server_data{};
