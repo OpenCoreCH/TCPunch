@@ -67,9 +67,12 @@ void* peer_listen(void* p) {
     }
 }
 
-int pair(const std::string& pairing_name, const std::string& server_address, int port) {
+int pair(const std::string& pairing_name, const std::string& server_address, int port, int timeout_ms) {
     connection_established = false;
     accepting_socket = -1;
+    struct timeval timeout;
+    timeout.tv_sec = timeout_ms / 1000;
+    timeout.tv_usec = (timeout_ms % 1000) * 1000;
 
     int socket_rendezvous;
     struct sockaddr_in server_data{};
@@ -84,6 +87,10 @@ int pair(const std::string& pairing_name, const std::string& server_address, int
     if (setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEADDR, &enable_flag, sizeof(int)) < 0 ||
         setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
         error_exit_errno("Setting REUSE options failed: ");
+    }
+    if (setsockopt(socket_rendezvous, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout) < 0 ||
+        setsockopt(socket_rendezvous, SOL_SOCKET, SO_REUSEPORT, &enable_flag, sizeof(int)) < 0) {
+        error_exit_errno("Setting timeout failed: ");
     }
 
     server_data.sin_family = AF_INET;
