@@ -1,4 +1,4 @@
-# C++ TCP NAT Hole Punching Library
+<img src="./tcpunch.svg" width="100%">
 
 C++ server and client library to perform NAT hole punching. 
 
