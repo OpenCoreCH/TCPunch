@@ -2,6 +2,8 @@
 #define HOLEPUNCHINGSERVERCLIENT_UTILS_H
 
 #include <arpa/inet.h>
+#include <exception>
+#include "../client/tcpunch.h"
 
 typedef struct {
     struct in_addr ip;
@@ -9,13 +11,16 @@ typedef struct {
 } PeerConnectionData;
 
 void error_exit(const std::string& error_string) {
-    std::cerr << error_string << std::endl;
-    exit(EXIT_FAILURE);
+    throw error_string;
 }
 
 void error_exit_errno(const std::string& error_string) {
-    std::cerr << error_string << strerror(errno) << std::endl;
-    exit(EXIT_FAILURE);
+    if (errno == EAGAIN) {
+        throw Timeout();
+    } else {
+        std::string err = error_string + strerror(errno);
+        throw err;
+    }
 }
 
 std::string ip_to_string(in_addr_t *ip) {
